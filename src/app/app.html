@@ -1,0 +1,291 @@
+<div class="page">
+  <div class="hero">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <h1 class="brand">Velocity Motors</h1>
+      <p class="tagline">Drive your passion. Login or register to get started.</p>
+    </div>
+  </div>
+
+  <!-- AUTH -->
+  <div class="auth-wrapper" *ngIf="!isAuthenticated">
+    <div class="card">
+      <h2 *ngIf="isLogin">Welcome back, driver</h2>
+      <h2 *ngIf="!isLogin">Create your garage account</h2>
+
+      <div *ngIf="isLogin">
+        <div class="input-group">
+          <label>Email</label>
+          <input [(ngModel)]="email" type="email" placeholder="you@example.com">
+          <div class="field-error" *ngIf="loginEmailError">{{ loginEmailError }}</div>
+        </div>
+
+        <div class="input-group">
+          <label>Password</label>
+          <input [(ngModel)]="password" type="password" placeholder="Enter your password">
+          <div class="field-error" *ngIf="loginPasswordError">{{ loginPasswordError }}</div>
+        </div>
+
+        <button class="primary-btn" (click)="Validate()">Sign In</button>
+
+        <p class="switch">
+          No account?
+          <span (click)="switchForm()">Register</span>
+        </p>
+      </div>
+
+      <div *ngIf="!isLogin">
+        <div class="input-group">
+          <label>Email</label>
+          <input [(ngModel)]="regEmail" type="email" placeholder="you@example.com">
+          <div class="field-error" *ngIf="registerEmailError">{{ registerEmailError }}</div>
+        </div>
+
+        <div class="input-group">
+          <label>Username</label>
+          <input [(ngModel)]="usernameReg" type="text" placeholder="Choose a username">
+          <div class="field-error" *ngIf="registerUsernameError">{{ registerUsernameError }}</div>
+        </div>
+
+        <div class="input-group">
+          <label>Password</label>
+          <input [(ngModel)]="regPassword" type="password" placeholder="Create a strong password">
+          <div class="field-error" *ngIf="registerPasswordError">{{ registerPasswordError }}</div>
+        </div>
+
+        <div class="input-group">
+          <label>Role</label>
+          <select [(ngModel)]="role">
+            <option value="student">Student Driver</option>
+            <option value="instructor">Instructor</option>
+          </select>
+        </div>
+
+        <button class="primary-btn" (click)="register()">Register</button>
+
+        <p class="switch">
+          Already have an account?
+          <span (click)="switchForm()">Login</span>
+        </p>
+
+        <table class="users-table" *ngIf="hasValidated && newuserList.length">
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Email</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of newuserList">
+              <td>{{user.username}}</td>
+              <td>{{user.email}}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="message" *ngIf="message">{{message}}</p>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="dash-shell" *ngIf="isAuthenticated">
+    <aside class="dash-sidebar">
+      <div class="side-brand">
+        <div class="logo">VM</div>
+        <div class="meta">
+          <div class="name">Velocity</div>
+          <div class="tier">{{ loggedInRole === 'student' ? 'Student' : 'Instructor' }}</div>
+        </div>
+      </div>
+
+      <nav class="side-nav">
+        <button class="nav-item" [class.active]="activeNav === 'overview'" (click)="activeNav = 'overview'">
+          Overview
+        </button>
+        <button class="nav-item" [class.active]="activeNav === 'users'" (click)="activeNav = 'users'">
+          Users
+        </button>
+        <button class="nav-item" [class.active]="activeNav === 'settings'" (click)="activeNav = 'settings'">
+          Settings
+        </button>
+      </nav>
+
+      <div class="side-footer">
+        <div class="who" *ngIf="loggedInUser">
+          <div class="avatar">{{ loggedInUser.username.slice(0, 1) }}</div>
+          <div class="who-meta">
+            <div class="who-name">{{ loggedInUser.username }}</div>
+            <div class="who-email">{{ loggedInUser.email }}</div>
+          </div>
+        </div>
+        <button class="btn-ghost" (click)="logout()">Logout</button>
+      </div>
+    </aside>
+
+    <main class="dash-main">
+      <header class="dash-topbar">
+        <div class="top-left">
+          <div class="top-title">Dashboard</div>
+          <div class="top-sub" *ngIf="loggedInUser">
+            Welcome back, <b>{{ loggedInUser.username }}</b>
+          </div>
+        </div>
+        <div class="top-right">
+          <div class="pill">
+            {{ loggedInRole === 'student' ? 'Student access' : 'Instructor access' }}
+          </div>
+        </div>
+      </header>
+
+      <!-- OVERVIEW -->
+      <section *ngIf="activeNav === 'overview'" class="dash-grid">
+        <div class="kpi">
+          <div class="kpi-label">Total registrations</div>
+          <div class="kpi-value">{{ newuserList.length }}</div>
+          <div class="kpi-foot">All users created in this session</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-label">Students</div>
+          <div class="kpi-value">{{ students.length }}</div>
+          <div class="kpi-foot">Registered student drivers</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-label">Instructors</div>
+          <div class="kpi-value">{{ instructors.length }}</div>
+          <div class="kpi-foot">Registered instructors</div>
+        </div>
+
+        <div class="panel span-2">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">Recent activity</div>
+              <div class="panel-sub">Latest actions in your account</div>
+            </div>
+          </div>
+          <div class="activity" *ngIf="activity.length; else emptyActivity">
+            <div class="activity-row" *ngFor="let item of activity">
+              <div class="dot" [class.alert]="item.type === 'alert'"></div>
+              <div class="activity-main">
+                <div class="activity-title">{{ item.title }}</div>
+                <div class="activity-detail">{{ item.detail }}</div>
+              </div>
+              <div class="activity-time">{{ formatTime(item.at) }}</div>
+            </div>
+          </div>
+          <ng-template #emptyActivity>
+            <div class="empty">
+              No activity yet. Register or login to populate this feed.
+            </div>
+          </ng-template>
+        </div>
+
+        <div class="panel span-2">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">Quick insights</div>
+              <div class="panel-sub">A clean pro dashboard layout</div>
+            </div>
+          </div>
+          <div class="insights">
+            <div class="insight-card">
+              <div class="insight-title">Security</div>
+              <div class="insight-body">Use unique passwords and log out on shared devices.</div>
+            </div>
+            <div class="insight-card">
+              <div class="insight-title">Profile</div>
+              <div class="insight-body">Your dashboard is personalized to your account.</div>
+            </div>
+            <div class="insight-card">
+              <div class="insight-title">Performance</div>
+              <div class="insight-body">Fast, responsive layout with modern styling.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- USERS -->
+      <section *ngIf="activeNav === 'users'" class="dash-grid">
+        <div class="panel span-4">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">Registered users</div>
+              <div class="panel-sub">List captured from your registration form</div>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="dash-table" *ngIf="newuserList.length; else noUsers">
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Email</th>
+                  <th>Type</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let user of newuserList">
+                  <td>{{ user.username }}</td>
+                  <td>{{ user.email }}</td>
+                  <td>
+                    <span class="badge" *ngIf="students.some(s => s.email === user.email)">Student</span>
+                    <span class="badge blue" *ngIf="instructors.some(i => i.email === user.email)">Instructor</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <ng-template #noUsers>
+              <div class="empty">
+                No registered users yet. Go to Register and create at least one account.
+              </div>
+            </ng-template>
+          </div>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section *ngIf="activeNav === 'settings'" class="dash-grid">
+        <div class="panel span-2">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">Account</div>
+              <div class="panel-sub">Basic session details</div>
+            </div>
+          </div>
+          <div class="kv">
+            <div class="kv-row"><div class="k">Role</div><div class="v">{{ loggedInRole }}</div></div>
+            <div class="kv-row" *ngIf="loggedInUser"><div class="k">Username</div><div class="v">{{ loggedInUser.username }}</div></div>
+            <div class="kv-row" *ngIf="loggedInUser"><div class="k">Email</div><div class="v">{{ loggedInUser.email }}</div></div>
+          </div>
+        </div>
+
+        <div class="panel span-2">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">Preferences</div>
+              <div class="panel-sub">Demo settings (UI only)</div>
+            </div>
+          </div>
+          <div class="prefs">
+            <div class="pref">
+              <div class="pref-text">
+                <div class="pref-title">Compact mode</div>
+                <div class="pref-sub">Tighter spacing for tables</div>
+              </div>
+              <div class="toggle on"></div>
+            </div>
+            <div class="pref">
+              <div class="pref-text">
+                <div class="pref-title">Notifications</div>
+                <div class="pref-sub">Show important alerts</div>
+              </div>
+              <div class="toggle"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
